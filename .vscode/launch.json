@@ -1,0 +1,14 @@
+{
+  "configurations": [
+    {
+      "type": "java",
+      "name": "CodeLens (Launch) - Main",
+      "request": "launch",
+      "mainClass": "Main",
+      "projectName": "CameraVisionJoystickDriver",
+      "vmArgs": [
+        "-Djava.library.path=${workspaceFolder}/build/libs/natives"
+      ]
+    }
+  ]
+}
