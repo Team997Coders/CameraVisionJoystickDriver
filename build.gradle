@@ -17,6 +17,7 @@ configurations {
 dependencies {
   // https://mvnrepository.com/artifact/net.java.jinput/jinput
   implementation 'net.java.jinput:jinput:2.0.9'
+  implementation 'com.beust:jcommander:1.72'
   if (System.getProperty("os.name").toLowerCase().contains("windows")) {
     nativeBundle 'net.java.jinput:windows-plugin:2.0.9:natives-windows'
   } else if (System.getProperty("os.name").toLowerCase().contains("os x")) {

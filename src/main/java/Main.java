@@ -28,7 +28,32 @@ public class Main {
   /**
    * @param args the command line arguments
    */
-  public static void main(String[] args) {
+  public static void main(String ... argv) {
+    Main main = new Main();
+    RuntimeSettings runtimeSettings = new RuntimeSettings(argv);
+    if (runtimeSettings.parse()) {
+      if (runtimeSettings.getHelp()) {
+        // print out the usage to sysout
+        runtimeSettings.printUsage();
+      } else {
+        // run the app
+        main.run(runtimeSettings);
+        System.exit(0);
+      }
+    } else {
+      // print the parameter error, show the usage, and bail
+      System.err.println(runtimeSettings.getParseErrorMessage());
+      runtimeSettings.printUsage();
+      System.exit(1);
+    }
+  }  
+
+  /**
+   * The meat of the application.
+   * 
+   * @param runtimeSettings   Wired up settings from the command line.
+   */
+  public void run(RuntimeSettings runtimeSettings) {
     // First create a joystick object.
     JInputJoystick joystick = new JInputJoystick(Controller.Type.STICK, Controller.Type.GAMEPAD);
 
@@ -39,7 +64,7 @@ public class Main {
     }
 
     // Create a teensy object.
-    try(CameraVisionClient cameraVisionClient = new CameraVisionClient()) {
+    try(CameraVisionClient cameraVisionClient = new CameraVisionClient(runtimeSettings.getHost(), runtimeSettings.getPort())) {
       while(true) {
         // Get current state of joystick and check if joystick is disconnected.
         if( !joystick.pollController() ) {
@@ -79,7 +104,7 @@ public class Main {
           // Always slew
           cameraVisionClient.slew(Math.round(xValueLeftJoystick * 100) * -1, Math.round(yValueLeftJoystick * 100));
         } catch (IndexOutOfBoundsException e) {
-          System.out.println("Center button not found...continuing.");
+          System.out.println("Expected buttons not found...continuing.");
         }
         try {
           // Don't spin the CPUs
