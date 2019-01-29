@@ -9,10 +9,13 @@ import java.net.UnknownHostException;
  * network sockets.
  */
 public class CameraVisionClient implements Closeable {
-  private final Socket socket;
-  private final PrintWriter client;
+  private Socket socket;
+  private PrintWriter client;
+  private final String host;
+  private final int port;
   private boolean lastPanWasZero;
   private boolean lastTiltWasZero;
+  private boolean connected;
 
   /**
    * Constructor that assumes the client is running on localhost and 
@@ -44,16 +47,61 @@ public class CameraVisionClient implements Closeable {
    * @throws IOException          Thrown if...who knows.
    */
   public CameraVisionClient(String host, int port) throws UnknownHostException, IOException {
+    this.host = host;
+    this.port = port;
+    connected = false;
     // Socket to talk to the CameraVision application
     this.socket = new Socket(host, port);
     // PrintWriter through which we will write commands to
     this.client = new PrintWriter(socket.getOutputStream(), true);
     lastPanWasZero = true;
     lastTiltWasZero = true;
+    System.out.println("CameraVisionClient connected.");
+    connected = true;
   }
 
+  /**
+   * Close all resources.
+   */
   public void close() throws IOException {
     socket.close();
+    connected = false;
+    System.out.println("CameraVisionClient disconnected.");
+  }
+
+  /**
+   * Wrap up PrintWriter printf to check for errors and reconnect to the socket.
+   * 
+   * @param format  The string format.
+   * @param args    Variable length argument list.
+   */
+  private void printf(String format, Object... args) {
+    // Try to print the command
+    client.printf(format, args);
+    // If it fails, then try to reconnect and print again.
+    if (client.checkError()) {
+      if (connected) {
+        System.out.println("CameraVisionClient disconnected.");
+        connected = false;
+      }
+      try {
+        lastPanWasZero = true;
+        lastTiltWasZero = true;
+        client.close();
+        socket.close();
+        // Socket to talk to the CameraVision application
+        socket = new Socket(host, port);
+        // PrintWriter through which we will write commands to
+        client = new PrintWriter(socket.getOutputStream(), true);
+        client.printf(format, args);
+        if (!client.checkError()) {
+          connected = true;
+          System.out.println("CameraVisionClient connected.");
+        }
+      } catch (Exception e) {
+        // do nothing
+      }
+    }
   }
 
   /**
@@ -68,58 +116,93 @@ public class CameraVisionClient implements Closeable {
     // Also treat -1..1 as zero to deal with rounding issues from joystick
     if (panPct >= -2 && panPct <= 2) {
       if (!lastPanWasZero) {
-        client.printf("%dp", 0);
+        printf("%dp", 0);
         lastPanWasZero = true;
       }
     } else {
-      client.printf("%dp", panPct);
+      printf("%dp", panPct);
       lastPanWasZero = false;
     }
     // Keep from flooding pipe with zero tilt commands
     // Also treat -1..1 as zero to deal with rounding issues from joystick
     if (tiltPct >= -2 && tiltPct <= 2) {
       if (!lastTiltWasZero) {
-        client.printf("%dt", 0);
+        printf("%dt", 0);
         lastTiltWasZero = true;
       }
     } else {
-      client.printf("%dt", tiltPct);
+      printf("%dt", tiltPct);
       lastTiltWasZero = false;
     }
   }
 
   /**
-   * Center the camera on both axes.
+   * Press left thumbstick button.
    */
-  public void center() {
-    client.printf("c");
+  public void pressLeftThumbstick() {
+    printf("c");
+  }
+
+  /**
+   * Press right thumbstick button.
+   */
+  public void pressRightThumbstick() {
+    printf("d");
+  }
+
+  /**
+   * Press left shoulder button.
+   */
+  public void pressLeftShoulder() {
+    printf("e");
+  }
+
+  /**
+   * Press right shoulder button.
+   */
+  public void pressRightShoulder() {
+    printf("f");
+  }
+
+    /**
+   * Press left trigger button.
+   */
+  public void pressLeftTrigger() {
+    printf("g");
+  }
+
+  /**
+   * Press right trigger button.
+   */
+  public void pressRightTrigger() {
+    printf("h");
   }
 
   /**
    * Press A.
    */
   public void pressA() {
-    client.printf("A");
+    printf("A");
   }
 
   /**
    * Press B.
    */
   public void pressB() {
-    client.printf("B");
+    printf("B");
   }
 
   /**
    * Press X.
    */
   public void pressX() {
-    client.printf("X");
+    printf("X");
   }
 
   /**
    * Press Y.
    */
   public void pressY() {
-    client.printf("Y");
+    printf("Y");
   }
 }

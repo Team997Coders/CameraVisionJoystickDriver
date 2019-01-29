@@ -1,3 +1,5 @@
+import java.util.concurrent.Callable;
+
 import joystick.JInputJoystick;
 
 import net.java.games.input.*;
@@ -12,7 +14,18 @@ public class Main {
   private static final int B_BUTTON = 2;
   private static final int X_BUTTON = 0;
   private static final int Y_BUTTON = 3;
-  private static final int CENTER_BUTTON = 10;
+  private static final int LEFT_THUMBSTICK_BUTTON = 10;
+  private static final int RIGHT_THUMBSTICK_BUTTON = 11;
+  private static final int LEFT_SHOULDER_BUTTON = 4;
+  private static final int RIGHT_SHOULDER_BUTTON = 5;
+  private static final int LEFT_TRIGGER_BUTTON = 6;
+  private static final int RIGHT_TRIGGER_BUTTON = 7;
+  private static long lastClickedMillis = 0;
+  private static final long DEBOUNCE_TIME = 250;
+
+  interface Debouncer {
+    void call();
+  } 
 
   /**
    * @param args the command line arguments
@@ -39,21 +52,31 @@ public class Main {
         
         // Get left controller joystick values
         float xValueLeftJoystick = joystick.getXAxisValue();
-        float yValueLeftJoystick = joystick.getYAxisValue();        
-
+        float yValueLeftJoystick = joystick.getYAxisValue();
+        
         // Read gamepad button states and forward states and joystick
         // values to CameraVisionClient.
         try {
-          if (joystick.getButtonValue(CENTER_BUTTON)) {
-            cameraVisionClient.center();
+          if (joystick.getButtonValue(LEFT_THUMBSTICK_BUTTON)) {
+            debounce(cameraVisionClient::pressLeftThumbstick);
+          } else if (joystick.getButtonValue(RIGHT_THUMBSTICK_BUTTON)) {
+            debounce(cameraVisionClient::pressRightThumbstick);
+          } else if (joystick.getButtonValue(LEFT_SHOULDER_BUTTON)) {
+            debounce(cameraVisionClient::pressLeftShoulder);
+          } else if (joystick.getButtonValue(RIGHT_SHOULDER_BUTTON)) {
+            debounce(cameraVisionClient::pressRightShoulder);
+          } else if (joystick.getButtonValue(LEFT_TRIGGER_BUTTON)) {
+            debounce(cameraVisionClient::pressLeftTrigger);
+          } else if (joystick.getButtonValue(RIGHT_TRIGGER_BUTTON)) {
+            debounce(cameraVisionClient::pressRightTrigger);
           } else if (joystick.getButtonValue(A_BUTTON)) {
-            cameraVisionClient.pressA();
+            debounce(cameraVisionClient::pressA);
           } else if (joystick.getButtonValue(B_BUTTON)) {
-            cameraVisionClient.pressB();
+            debounce(cameraVisionClient::pressB);
           } else if (joystick.getButtonValue(X_BUTTON)) {
-            cameraVisionClient.pressX();
+            debounce(cameraVisionClient::pressX);
           } else if (joystick.getButtonValue(Y_BUTTON)) {
-            cameraVisionClient.pressY();
+            debounce(cameraVisionClient::pressY);
           }
           // Always slew
           cameraVisionClient.slew(Math.round(xValueLeftJoystick * 100) * -1, Math.round(yValueLeftJoystick * 100));
@@ -62,7 +85,7 @@ public class Main {
         }
         try {
           // Don't spin the CPUs
-          Thread.sleep(100);
+          Thread.sleep(20);
         } catch (InterruptedException e) {
           System.exit(0);
         }
@@ -71,5 +94,15 @@ public class Main {
       System.out.println(e.getMessage());
       System.exit(1);
     }
-  }    
+  }
+
+  public static void debounce(Debouncer func) {
+    long nowMillis = System.currentTimeMillis();
+    if ((nowMillis - lastClickedMillis) > DEBOUNCE_TIME) {
+      lastClickedMillis = nowMillis;
+      func.call();
+    } else {
+      // Do nothing
+    }
+  }
 }
