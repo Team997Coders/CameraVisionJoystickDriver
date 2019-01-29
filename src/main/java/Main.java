@@ -1,5 +1,3 @@
-import java.util.concurrent.Callable;
-
 import joystick.JInputJoystick;
 
 import net.java.games.input.*;
