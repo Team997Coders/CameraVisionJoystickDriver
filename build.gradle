@@ -23,7 +23,7 @@ dependencies {
   } else if (System.getProperty("os.name").toLowerCase().contains("os x")) {
     nativeBundle 'net.java.jinput:osx-plugin:2.0.9:natives-osx'
   } else {
-    nativeBundle 'net.java.jinput:osx-plugin:2.0.9:natives-linux'
+    nativeBundle 'net.java.jinput:linux-plugin:2.0.9:natives-linux'
   }
 }
 
