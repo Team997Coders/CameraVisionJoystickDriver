@@ -52,6 +52,11 @@ public class CameraVisionClient implements Closeable {
     connected = false;
     // Socket to talk to the CameraVision application
     this.socket = new Socket(host, port);
+    // Disable NAGLE algo so that sent packets are not held up.
+    // This seems to be disabled on the Windows loopback, so I do
+    // not see performance problems there but do when deploying
+    // the CameraVision app across the network.
+    this.socket.setTcpNoDelay(true);
     // PrintWriter through which we will write commands to
     this.client = new PrintWriter(socket.getOutputStream(), true);
     lastPanWasZero = true;
@@ -91,6 +96,7 @@ public class CameraVisionClient implements Closeable {
         socket.close();
         // Socket to talk to the CameraVision application
         socket = new Socket(host, port);
+        socket.setTcpNoDelay(true);
         // PrintWriter through which we will write commands to
         client = new PrintWriter(socket.getOutputStream(), true);
         client.printf(format, args);
